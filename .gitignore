@@ -5,3 +5,5 @@ _site
 test/scratch/scratch.html
 .DS_Store
 .vscode
+.replit
+replit.nix
