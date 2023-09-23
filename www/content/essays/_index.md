@@ -1,6 +1,7 @@
 +++
 title = "Essays"
 insert_anchor_links = "left"
+page_template = "essay.html"
 +++
 
 ### Hypermedia and REST
@@ -14,6 +15,7 @@ insert_anchor_links = "left"
 * [Rescuing REST From the API Winter](https://intercoolerjs.org/2016/01/18/rescuing-rest.html)
 * [Taking HTML Seriously](https://intercoolerjs.org/2020/01/14/taking-html-seriously)
 * [REST Copypasta](@/essays/rest-copypasta.md)
+* [The #ViewSource Affordance](@/essays/right-click-view-source.md)
 
 ### Why Hypermedia? Why Multi-Page Applications?
 * [Hypermedia On Whatever you'd Like (HOWL)](@/essays/hypermedia-on-whatever-youd-like.md)
@@ -24,6 +26,7 @@ insert_anchor_links = "left"
 
 ### Building Hypermedia Applications
 * [A Real World React to htmx Port](@/essays/a-real-world-react-to-htmx-port.md)
+* [Another Real World React to htmx Port](@/essays/another-real-world-react-to-htmx-port.md)
 * [Hypermedia-Driven Applications (HDAs)](@/essays/hypermedia-driven-applications.md)
 * [Hypermedia Friendly Scripting](@/essays/hypermedia-friendly-scripting.md)
 * [10 Tips For Building SSR/HDA applications](@/essays/10-tips-for-SSR-HDA-apps.md)
@@ -34,6 +37,7 @@ insert_anchor_links = "left"
 * [The Grug Brained Developer](https://grugbrain.dev)
 * [Locality of Behavior (LoB)](@/essays/locality-of-behaviour.md)
 * [Complexity Budget](@/essays/complexity-budget.md)
+* [Why htmx Does Not Have a Build Step](@/essays/no-build-step.md)
 
 
 

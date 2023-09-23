@@ -60,6 +60,7 @@ return (function () {
                 settlingClass:'htmx-settling',
                 swappingClass:'htmx-swapping',
                 allowEval:true,
+                allowScriptTags:true,
                 inlineScriptNonce:'',
                 attributesToSettle:["class", "style", "width", "height"],
                 withCredentials:false,
@@ -73,6 +74,7 @@ return (function () {
                 getCacheBusterParam: false,
                 globalViewTransitions: false,
                 methodsThatUseUrlParams: ["get"],
+                selfRequestsOnly: false
             },
             parseInterval:parseInterval,
             _:internalEval,
@@ -84,7 +86,7 @@ return (function () {
                 sock.binaryType = htmx.config.wsBinaryType;
                 return sock;
             },
-            version: "1.9.3"
+            version: "1.9.5"
         };
 
         /** @type {import("./htmx").HtmxInternalApi} */
@@ -391,7 +393,7 @@ return (function () {
 
         function bodyContains(elt) {
             // IE Fix
-            if (elt.getRootNode && elt.getRootNode() instanceof ShadowRoot) {
+            if (elt.getRootNode && elt.getRootNode() instanceof window.ShadowRoot) {
                 return getDocument().body.contains(elt.getRootNode().host);
             } else {
                 return getDocument().body.contains(elt);
@@ -593,6 +595,8 @@ return (function () {
                 return [document];
             } else if (selector === 'window') {
                 return [window];
+            } else if (selector === 'body') {
+                return [document.body];
             } else {
                 return getDocument().querySelectorAll(normalizeSelector(selector));
             }
@@ -760,7 +764,7 @@ return (function () {
          * @returns
          */
         function oobSwap(oobValue, oobElement, settleInfo) {
-            var selector = "#" + oobElement.id;
+            var selector = "#" + getRawAttribute(oobElement, "id");
             var swapStyle = "outerHTML";
             if (oobValue === "true") {
                 // do nothing
@@ -841,8 +845,9 @@ return (function () {
 
         function handleAttributes(parentNode, fragment, settleInfo) {
             forEach(fragment.querySelectorAll("[id]"), function (newNode) {
-                if (newNode.id && newNode.id.length > 0) {
-                    var normalizedId = newNode.id.replace("'", "\\'");
+                var id = getRawAttribute(newNode, "id")
+                if (id && id.length > 0) {
+                    var normalizedId = id.replace("'", "\\'");
                     var normalizedTag = newNode.tagName.replace(':', '\\:');
                     var oldNode = parentNode.querySelector(normalizedTag + "[id='" + normalizedId + "']");
                     if (oldNode && oldNode !== parentNode) {
@@ -916,7 +921,7 @@ return (function () {
             if (internalData.onHandlers) {
                 for (let i = 0; i < internalData.onHandlers.length; i++) {
                     const handlerInfo = internalData.onHandlers[i];
-                    elt.removeEventListener(handlerInfo.name, handlerInfo.handler);
+                    elt.removeEventListener(handlerInfo.event, handlerInfo.listener);
                 }
                 delete internalData.onHandlers
             }
@@ -939,6 +944,9 @@ return (function () {
                         info.on.removeEventListener(info.trigger, info.listener);
                     }
                 });
+            }
+            if (internalData.initHash) {
+                internalData.initHash = null
             }
             deInitOnHandlers(element);
         }
@@ -965,7 +973,7 @@ return (function () {
                     newElt = eltBeforeNewContent.nextSibling;
                 }
                 getInternalData(target).replacedWith = newElt; // tuck away so we can fire events on it later
-                settleInfo.elts = settleInfo.elts.filter(e => e != target);
+                settleInfo.elts = settleInfo.elts.filter(function(e) { return e != target });
                 while(newElt && newElt !== target) {
                     if (newElt.nodeType === Node.ELEMENT_NODE) {
                         settleInfo.elts.push(newElt);
@@ -1110,7 +1118,10 @@ return (function () {
                     }
                 }
             } else {
-                triggerEvent(elt, triggerBody, []);
+                var eventNames = triggerBody.split(",")
+                for (var i = 0; i < eventNames.length; i++) {
+                    triggerEvent(elt, eventNames[i].trim(), []);
+                }
             }
         }
 
@@ -1297,7 +1308,7 @@ return (function () {
                 return triggerSpecs;
             } else if (matches(elt, 'form')) {
                 return [{trigger: 'submit'}];
-            } else if (matches(elt, 'input[type="button"]')){
+            } else if (matches(elt, 'input[type="button"], input[type="submit"]')){
                 return [{trigger: 'click'}];
             } else if (matches(elt, INPUT_SELECTOR)) {
                 return [{trigger: 'change'}];
@@ -1347,6 +1358,10 @@ return (function () {
                 }
                 triggerSpecs.forEach(function(triggerSpec) {
                     addEventListener(elt, function(elt, evt) {
+                        if (closest(elt, htmx.config.disableSelector)) {
+                            cleanUpElement(elt)
+                            return
+                        }
                         issueAjaxRequest(verb, path, elt, evt)
                     }, nodeData, triggerSpec, true);
                 });
@@ -1400,9 +1415,12 @@ return (function () {
             } else {
                 eltsToListenOn = [elt];
             }
-            // store the initial value of the element so we can tell if it changes
+            // store the initial values of the elements, so we can tell if they change
             if (triggerSpec.changed) {
-                elementData.lastValue = elt.value;
+                eltsToListenOn.forEach(function (eltToListenOn) {
+                    var eltToListenOnData = getInternalData(eltToListenOn);
+                    eltToListenOnData.lastValue = eltToListenOn.value;
+                })
             }
             forEach(eltsToListenOn, function (eltToListenOn) {
                 var eventListener = function (evt) {
@@ -1442,11 +1460,11 @@ return (function () {
                             }
                         }
                         if (triggerSpec.changed) {
-                            if (elementData.lastValue === elt.value) {
+                            var eltToListenOnData = getInternalData(eltToListenOn)
+                            if (eltToListenOnData.lastValue === eltToListenOn.value) {
                                 return;
-                            } else {
-                                elementData.lastValue = elt.value;
                             }
+                            eltToListenOnData.lastValue = eltToListenOn.value
                         }
                         if (elementData.delayed) {
                             clearTimeout(elementData.delayed);
@@ -1756,6 +1774,10 @@ return (function () {
                     nodeData.verb = verb;
                     triggerSpecs.forEach(function(triggerSpec) {
                         addTriggerHandler(elt, triggerSpec, nodeData, function (elt, evt) {
+                            if (closest(elt, htmx.config.disableSelector)) {
+                                cleanUpElement(elt)
+                                return
+                            }
                             issueAjaxRequest(verb, path, elt, evt)
                         })
                     });
@@ -1803,7 +1825,7 @@ return (function () {
         }
 
         function evalScript(script) {
-            if (script.type === "text/javascript" || script.type === "module" || script.type === "") {
+            if (htmx.config.allowScriptTags && (script.type === "text/javascript" || script.type === "module" || script.type === "") ) {
                 var newScript = getDocument().createElement("script");
                 forEach(script.attributes, function (attr) {
                     newScript.setAttribute(attr.name, attr.value);
@@ -1853,8 +1875,8 @@ return (function () {
 
         function findElementsToProcess(elt) {
             if (elt.querySelectorAll) {
-                var boostedElts = hasChanceOfBeingBoosted() ? ", a, form" : "";
-                var results = elt.querySelectorAll(VERB_SELECTOR + boostedElts + ", [hx-sse], [data-hx-sse], [hx-ws]," +
+                var boostedElts = hasChanceOfBeingBoosted() ? ", a" : "";
+                var results = elt.querySelectorAll(VERB_SELECTOR + boostedElts + ", form, [type='submit'], [hx-sse], [data-hx-sse], [hx-ws]," +
                     " [data-hx-ws], [hx-ext], [data-hx-ext], [hx-trigger], [data-hx-trigger], [hx-on], [data-hx-on]");
                 return results;
             } else {
@@ -1862,8 +1884,15 @@ return (function () {
             }
         }
 
-        function initButtonTracking(form){
-            var maybeSetLastButtonClicked = function(evt){
+        function initButtonTracking(elt) {
+            // Handle submit buttons/inputs that have the form attribute set
+            // see https://developer.mozilla.org/docs/Web/HTML/Element/button
+            var form = resolveTarget("#" + getRawAttribute(elt, "form")) || closest(elt, "form")
+            if (!form) {
+                return
+            }
+
+            var maybeSetLastButtonClicked = function (evt) {
                 var elt = closest(evt.target, "button, input[type='submit']");
                 if (elt !== null) {
                     var internalData = getInternalData(form);
@@ -1875,9 +1904,9 @@ return (function () {
             //   focusin - in case someone tabs in to a button and hits the space bar
             //   click - on OSX buttons do not focus on click see https://bugs.webkit.org/show_bug.cgi?id=13724
 
-            form.addEventListener('click', maybeSetLastButtonClicked)
-            form.addEventListener('focusin', maybeSetLastButtonClicked)
-            form.addEventListener('focusout', function(evt){
+            elt.addEventListener('click', maybeSetLastButtonClicked)
+            elt.addEventListener('focusin', maybeSetLastButtonClicked)
+            elt.addEventListener('focusout', function(evt){
                 var internalData = getInternalData(form);
                 internalData.lastButtonClicked = null;
             })
@@ -1900,17 +1929,22 @@ return (function () {
         function addHxOnEventHandler(elt, eventName, code) {
             var nodeData = getInternalData(elt);
             nodeData.onHandlers = [];
-            var func = new Function("event", code + "; return;");
-            var listener = elt.addEventListener(eventName, function (e) {
-                return func.call(elt, e);
-            });
+            var func;
+            var listener = function (e) {
+                return maybeEval(elt, function() {
+                    if (!func) {
+                        func = new Function("event", code);
+                    }
+                    func.call(elt, e);
+                });
+            };
+            elt.addEventListener(eventName, listener);
             nodeData.onHandlers.push({event:eventName, listener:listener});
-            return {nodeData, code, func, listener};
         }
 
         function processHxOn(elt) {
             var hxOnValue = getAttributeValue(elt, 'hx-on');
-            if (hxOnValue && htmx.config.allowEval) {
+            if (hxOnValue) {
                 var handlers = {}
                 var lines = hxOnValue.split("\n");
                 var currentEvent = null;
@@ -1938,8 +1972,9 @@ return (function () {
             // wipe any previous on handlers so that this function takes precedence
             deInitOnHandlers(elt)
 
-            for (const attr of elt.attributes) {
-                const { name, value } = attr
+            for (var i = 0; i < elt.attributes.length; i++) {
+                var name = elt.attributes[i].name
+                var value = elt.attributes[i].value
                 if (name.startsWith("hx-on:") || name.startsWith("data-hx-on:")) {
                     let eventName = name.slice(name.indexOf(":") + 1)
                     // if the eventName starts with a colon, prepend "htmx" for shorthand support
@@ -1951,16 +1986,16 @@ return (function () {
         }
 
         function initNode(elt) {
-            if (elt.closest && elt.closest(htmx.config.disableSelector)) {
+            if (closest(elt, htmx.config.disableSelector)) {
+                cleanUpElement(elt)
                 return;
             }
             var nodeData = getInternalData(elt);
             if (nodeData.initHash !== attributeHash(elt)) {
-
-                nodeData.initHash = attributeHash(elt);
-
                 // clean up any previously processed info
                 deInitNode(elt);
+
+                nodeData.initHash = attributeHash(elt);
 
                 processHxOn(elt);
 
@@ -1985,8 +2020,10 @@ return (function () {
                     }
                 }
 
-                if (elt.tagName === "FORM") {
-                    initButtonTracking(elt);
+                // Handle submit buttons/inputs that have the form attribute set
+                // see https://developer.mozilla.org/docs/Web/HTML/Element/button
+                if (elt.tagName === "FORM" || (getRawAttribute(elt, "type") === "submit" && hasAttribute(elt, "form"))) {
+                    initButtonTracking(elt)
                 }
 
                 var sseInfo = getAttributeValue(elt, 'hx-sse');
@@ -2004,6 +2041,10 @@ return (function () {
 
         function processNode(elt) {
             elt = resolveTarget(elt);
+            if (closest(elt, htmx.config.disableSelector)) {
+                cleanUpElement(elt)
+                return;
+            }
             initNode(elt);
             forEach(findElementsToProcess(elt), function(child) { initNode(child) });
             // Because it happens second, the new way of adding onHandlers superseeds the old one
@@ -2313,6 +2354,29 @@ return (function () {
             return true;
         }
 
+        function addValueToValues(name, value, values) {
+            // This is a little ugly because both the current value of the named value in the form
+            // and the new value could be arrays, so we have to handle all four cases :/
+            if (name != null && value != null) {
+                var current = values[name];
+                if (current === undefined) {
+                    values[name] = value;
+                } else if (Array.isArray(current)) {
+                    if (Array.isArray(value)) {
+                        values[name] = current.concat(value);
+                    } else {
+                        current.push(value);
+                    }
+                } else {
+                    if (Array.isArray(value)) {
+                        values[name] = [current].concat(value);
+                    } else {
+                        values[name] = [current, value];
+                    }
+                }
+            }
+        }
+
         function processInputValue(processed, values, errors, elt, validate) {
             if (elt == null || haveSeenNode(processed, elt)) {
                 return;
@@ -2329,28 +2393,7 @@ return (function () {
                 if (elt.files) {
                     value = toArray(elt.files);
                 }
-                // This is a little ugly because both the current value of the named value in the form
-                // and the new value could be arrays, so we have to handle all four cases :/
-                if (name != null && value != null) {
-                    var current = values[name];
-                    if (current !== undefined) {
-                        if (Array.isArray(current)) {
-                            if (Array.isArray(value)) {
-                                values[name] = current.concat(value);
-                            } else {
-                                current.push(value);
-                            }
-                        } else {
-                            if (Array.isArray(value)) {
-                                values[name] = [current].concat(value);
-                            } else {
-                                values[name] = [current, value];
-                            }
-                        }
-                    } else {
-                        values[name] = value;
-                    }
-                }
+                addValueToValues(name, value, values);
                 if (validate) {
                     validateElement(elt, errors);
                 }
@@ -2400,11 +2443,11 @@ return (function () {
             processInputValue(processed, values, errors, elt, validate);
 
             // if a button or submit was clicked last, include its value
-            if (internalData.lastButtonClicked) {
-                var name = getRawAttribute(internalData.lastButtonClicked,"name");
-                if (name) {
-                    values[name] = internalData.lastButtonClicked.value;
-                }
+            if (internalData.lastButtonClicked || elt.tagName === "BUTTON" ||
+                (elt.tagName === "INPUT" && getRawAttribute(elt, "type") === "submit")) {
+                var button = internalData.lastButtonClicked || elt
+                var name = getRawAttribute(button, "name")
+                addValueToValues(name, button.value, formValues)
             }
 
             // include any explicit includes
@@ -2809,6 +2852,18 @@ return (function () {
             return arr;
         }
 
+        function verifyPath(elt, path, requestConfig) {
+            var url = new URL(path, document.location.href);
+            var origin = document.location.origin;
+            var sameHost = origin === url.origin;
+            if (htmx.config.selfRequestsOnly) {
+                if (!sameHost) {
+                    return false;
+                }
+            }
+            return triggerEvent(elt, "htmx:validateUrl", mergeObjects({url: url, sameHost: sameHost}, requestConfig));
+        }
+
         function issueAjaxRequest(verb, path, elt, event, etc, confirmed) {
             var resolve = null;
             var reject = null;
@@ -3036,6 +3091,11 @@ return (function () {
                     }
                 }
             }
+
+            if (!verifyPath(elt, finalPath, requestConfig)) {
+                triggerErrorEvent(elt, 'htmx:invalidPath', requestConfig)
+                return;
+            };
 
             xhr.open(verb.toUpperCase(), finalPath, true);
             xhr.overrideMimeType("text/html");
@@ -3335,8 +3395,8 @@ return (function () {
 
                         if (selectionInfo.elt &&
                             !bodyContains(selectionInfo.elt) &&
-                            selectionInfo.elt.id) {
-                            var newActiveElt = document.getElementById(selectionInfo.elt.id);
+                            getRawAttribute(selectionInfo.elt, "id")) {
+                            var newActiveElt = document.getElementById(getRawAttribute(selectionInfo.elt, "id"));
                             var focusOptions = { preventScroll: swapSpec.focusScroll !== undefined ? !swapSpec.focusScroll : !htmx.config.defaultFocusScroll };
                             if (newActiveElt) {
                                 // @ts-ignore
@@ -3547,9 +3607,22 @@ return (function () {
         //====================================================================
         // Initialization
         //====================================================================
+        var isReady = false
+        getDocument().addEventListener('DOMContentLoaded', function() {
+            isReady = true
+        })
 
+        /**
+         * Execute a function now if DOMContentLoaded has fired, otherwise listen for it.
+         *
+         * This function uses isReady because there is no realiable way to ask the browswer whether
+         * the DOMContentLoaded event has already been fired; there's a gap between DOMContentLoaded
+         * firing and readystate=complete.
+         */
         function ready(fn) {
-            if (getDocument().readyState !== 'loading') {
+            // Checking readyState here is a failsafe in case the htmx script tag entered the DOM by
+            // some means other than the initial page load.
+            if (isReady || getDocument().readyState === 'complete') {
                 fn();
             } else {
                 getDocument().addEventListener('DOMContentLoaded', fn);

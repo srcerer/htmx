@@ -52,9 +52,10 @@ Standard events can also have modifiers that change how they behave.  The modifi
 * `changed` - the event will only change if the value of the element has changed. Please pay attention `change` is the name of the event and `changed` is the name of the modifier.
 * `delay:<timing declaration>` - a delay will occur before an event triggers a request.  If the event
 is seen again it will reset the delay.
-* `throttle:<timing declaration>` - a throttle will occur before an event triggers a request.  If the event
-is seen again before the delay completes it is ignored, the element will trigger at the end of the delay.
+* `throttle:<timing declaration>` - a throttle will occur after an event triggers a request. If the event
+is seen again before the delay completes, it is ignored, the element will trigger at the end of the delay.
 * `from:<Extended CSS selector>` - allows the event that triggers a request to come from another element in the document (e.g. listening to a key event on the body, to support hot keys)
+  * A standard CSS selector resolves to all elements matching that selector. Thus, `from:input` would listen on every input on the page.
   * The extended CSS selector here allows for the following non-standard CSS values:
     * `document` - listen for events on the document
     * `window` - listen for events on the window

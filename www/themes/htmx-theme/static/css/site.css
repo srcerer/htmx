@@ -129,6 +129,10 @@ table {
   line-height: 1em;
 }
 
+time {
+  font-weight: bold;
+}
+
 a {
 text-decoration: none;
 color: var(--midBlue)
@@ -476,12 +480,10 @@ pre[class|="language"] {
   color: lightgray;
 }
 .zola-anchor {
-  font-size: 80%;
-  margin-left: -.75rem;
-  margin-right: .75rem;
-  color: var(--midBlue);
-
+  margin-left: -1.3rem;
+  margin-right: .3rem;
+  opacity: 40%;
 }
 .zola-anchor:hover {
-  color: var(--lightBlue);
+    opacity: 95%;
 }
