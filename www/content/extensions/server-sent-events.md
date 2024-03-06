@@ -12,6 +12,7 @@ Use the following attributes to configure how SSE connections behave:
 
 * `sse-connect="<url>"` - The URL of the SSE server.
 * `sse-swap="<message-name>"` - The name of the message to swap into the DOM.
+* `hx-swap` - You can control the swap strategy by using the [hx-swap](@/attributes/hx-swap.md) attribute, though note that modifiers like `scroll` are not supported.
 * `hx-trigger="sse:<message-name>"` - SSE messages can also trigger HTTP callbacks using the [`hx-trigger`](@/attributes/hx-trigger.md) attribute.
 
 ## Install
@@ -103,7 +104,7 @@ If the SSE Event Stream is closed unexpectedly, browsers are supposed to attempt
 
 ### Testing SSE Connections with the Demo Server
 
-Htmx includes a demo SSE server written in Go that will help you to see SSE in action, and begin bootstrapping your own SSE code.  It is located in the /test/servers/sse folder of the htmx distribution.  Look at /test/servers/ws/README.md for instructions on running and using the test server.
+Htmx includes a demo SSE server written in Node.js that will help you to see SSE in action, and begin bootstrapping your own SSE code.  It is located in the /test/ws-sse folder of the htmx distribution.  Look at /test/ws-sse/README.md for instructions on running and using the test server.
 
 ### Migrating from Previous Versions
 

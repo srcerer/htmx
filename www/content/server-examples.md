@@ -29,6 +29,7 @@ These examples may make it a bit easier to get started using htmx with your plat
 - <https://github.com/DamianStanger/hapi-htmx>
 
 ## Python
+
 - <https://github.com/PyHAT-stack/awesome-python-htmx>
 
 ### Django
@@ -37,6 +38,7 @@ These examples may make it a bit easier to get started using htmx with your plat
 - <https://github.com/spookylukey/django-htmx-patterns/>
 - <https://github.com/idlesign/django-siteajax>
 - <https://github.com/guettli/django-htmx-fun/>
+- <https://www.photondesigner.com/articles/submit-async-django-form-with-htmx>
 
 ### FastAPI
 
@@ -47,6 +49,7 @@ These examples may make it a bit easier to get started using htmx with your plat
 
 - <https://github.com/edmondchuc/flask-htmx>
 - <https://github.com/cscortes/htmxflask>
+- <https://github.com/Konfuzian/htmx-examples-with-flask/>
 
 ### py4web
 
@@ -105,11 +108,17 @@ These examples may make it a bit easier to get started using htmx with your plat
 ### Rails
 
 - <https://github.com/rootstrap/htmx-rails>
+- <https://github.com/guilleiguaran/rails-htmx>
 
 ### Sinatra
 
 - <https://github.com/libsyz/htmx-to-do-app>
 - <https://github.com/beechnut/pokebutt-htmx>
+
+## Scala
+  
+### http4s
+- <https://github.com/martinprobson/http4s-htmx-demo>
 
 ## Kotlin
 
@@ -136,6 +145,15 @@ These examples may make it a bit easier to get started using htmx with your plat
 
 - <https://github.com/michalsn/codeigniter-htmx-demo>
 
+
+### Laravel
+
+- <https://spirofloropoulos.com/laravel-htmx-hard-mode-1.html>
+
+### Symfony
+
+- <https://github.com/tomcri/htmxfony>
+
 ## Elixir
 
 ### Phoenix
@@ -146,9 +164,27 @@ These examples may make it a bit easier to get started using htmx with your plat
 
 - <https://github.com/lorantkurthy/todo-htmex>
 
+## F#
+
+### Giraffe
+
+- <https://hamy.xyz/labs/2023-12-fsharp-htmx>
+
 ## Go
 
 ### templ
 
 - <https://templ.guide/server-side-rendering/htmx>
 - <https://github.com/jritsema/go-htmx-tailwind-example>
+
+### elem-go
+
+- <https://github.com/chasefleming/elem-go/tree/main/examples/htmx-fiber-counter>
+- <https://github.com/chasefleming/elem-go/tree/main/examples/htmx-fiber-todo>
+
+## Delphi
+
+### DelphiMVCFramework
+
+- <https://github.com/danieleteti/delphi-dmvcframework-htmx-todo>
+- <https://github.com/danieleteti/delphimvcframework/tree/master/samples/htmx>

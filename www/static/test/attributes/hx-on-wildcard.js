@@ -15,6 +15,14 @@ describe("hx-on:* attribute", function() {
         delete window.foo;
     });
 
+    it("can use dashes rather than colons", function () {
+        var btn = make("<button hx-on-click='window.foo = true'>Foo</button>");
+        btn.click();
+        window.foo.should.equal(true);
+        delete window.foo;
+    });
+
+
     it("can modify a parameter via htmx:configRequest", function () {
         this.server.respondWith("POST", "/test", function (xhr) {
             var params = parseParams(xhr.requestBody);
@@ -26,12 +34,34 @@ describe("hx-on:* attribute", function() {
         btn.innerText.should.equal("bar");
     });
 
+    it("can modify a parameter via htmx:configRequest with dashes", function () {
+        this.server.respondWith("POST", "/test", function (xhr) {
+            var params = parseParams(xhr.requestBody);
+            xhr.respond(200, {}, params.foo);
+        });
+        var btn = make("<button hx-on-htmx-config-request='event.detail.parameters.foo = \"bar\"' hx-post='/test'>Foo</button>");
+        btn.click();
+        this.server.respond();
+        btn.innerText.should.equal("bar");
+    });
+
     it("expands :: shorthand into htmx:", function () {
         this.server.respondWith("POST", "/test", function (xhr) {
             var params = parseParams(xhr.requestBody);
             xhr.respond(200, {}, params.foo);
         });
         var btn = make("<button hx-on::config-request='event.detail.parameters.foo = \"bar\"' hx-post='/test'>Foo</button>");
+        btn.click();
+        this.server.respond();
+        btn.innerText.should.equal("bar");
+    });
+
+    it("expands -- shorthand into htmx:", function () {
+        this.server.respondWith("POST", "/test", function (xhr) {
+            var params = parseParams(xhr.requestBody);
+            xhr.respond(200, {}, params.foo);
+        });
+        var btn = make("<button hx-on--config-request='event.detail.parameters.foo = \"bar\"' hx-post='/test'>Foo</button>");
         btn.click();
         this.server.respond();
         btn.innerText.should.equal("bar");
@@ -172,6 +202,24 @@ describe("hx-on:* attribute", function() {
         barBtn.click();
         window.bar.should.equal(true);
 
+        delete window.foo;
+        delete window.bar;
+    });
+
+    it("cleans up all handlers when the DOM updates", function () {
+        // setup
+        window.foo = 0;
+        window.bar = 0;
+        var div = make("<div hx-on:increment-foo='window.foo++' hx-on:increment-bar='window.bar++'>Foo</div>");
+        make("<div>Another Div</div>"); // sole purpose is to update the DOM
+
+        // check there is just one handler against each event
+        htmx.trigger(div, "increment-foo");
+        htmx.trigger(div, "increment-bar");
+        window.foo.should.equal(1);
+        window.bar.should.equal(1);
+
+        // teardown
         delete window.foo;
         delete window.bar;
     });
