@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.9.12] - 2024-04-17
+
+* [IE Fixes](https://github.com/bigskysoftware/htmx/commit/e64238dba3113c2eabe26b1e9e9ba7fe29ba3010)
+
+## [1.9.11] - 2024-03-15
+
+* Fix for new issue w/ web sockets & SSE on iOS 17.4 (thanks apple!)
+* Fix for double script execution issue when using template parsing
+* Fix TypeScript types file
+* Fix SSE Ext: reinstantiate EventSource listeners upon reconnection logic (#2272)
+    
 ## [1.9.10] - 2023-12-21
 
 * `hx-on*` attributes now support the form `hx-on-`, with a trailing dash, to better support template systems (such as EJS)
